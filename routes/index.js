@@ -1,20 +1,30 @@
 const express = require('express');
+const LocalStrategy = require('passport-local').Strategy;
 const router = express.Router();
+const { postRegister } = require('../controllers/index');
+const { Pool, Client} = require('pg');
 
 /* GET home page. */
 router.get('/', (req, res, next) => {
-  res.render('index', { title: 'Beme' });
+  // const pool = new Pool();
+
+  // pool.connect()
+  //   .then(() => {
+  //     console.log('looks like u connected to POSTGRES');
+  //     res.render('index', { title: 'Beme' });
+  //   })
+  //   .catch(err => {
+  //     console.log('ERROR: ', err);
+  //   })
 });
 
 /* GET /register */
 router.get('/register', (req, res, next) => {
-  res.send('GET /register');
+  res.send('POST /register');
 });
 
 /* POST /register */
-router.post('/register', (req, res, next) => {
-  res.send('POST /register');
-});
+router.post('/register', postRegister);
 
 /* GET /login */
 router.get('/login', (req, res, next) => {
@@ -46,12 +56,12 @@ router.put('/forgot', (req, res, next) => {
   res.send('PUT /forgot');
 });
 
-/* PUT /reset */
+/* PUT /reset/:token */
 router.get('/reset/:token', (req, res, next) => {
   res.send('GET /reset/:token');
 });
 
-/* PUT /reset */
+/* PUT /reset/:token */
 router.put('/reset/:token', (req, res, next) => {
   res.send('PUT /reset/:token');
 });
