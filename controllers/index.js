@@ -1,67 +1,27 @@
-const express          = require('express');
-const { Pool, Client}  = require('pg');
-const LocalStrategy    = require('passport-local').Strategy;
-const bcrypt           = require('bcrypt'),
-      SALT_WORK_FACTOR = 10;
+const { Pool }   = require('pg');
+const db         = require('../db/index');
+const passport   = require('../db/passport');
+const bcrypt     = require('bcrypt')
+    , saltRounds = 10;
 
 module.exports = {
-    userRegister(req, res, next){
-        const pool = new Pool()
+    async postRegister(req, res, next) {
+        try {
+            const hash = await bcrypt.hash('Chancie#12', saltRounds);
+            const sql = 'INSERT INTO "user" (username, email, password, created_date) VALUES ($1, $2, $3, $4) returning *';
+            const params = [
+                'darealbjamesy', 
+                'jamesballanger@trentu.ca', 
+                hash,
+                new Date()
+            ];      
+            const result = await db.query(sql, params);
 
-        (async () => {
-            const client = await pool.connect();
-
-            try {
-                await client.query('BEGIN');
-
-                const { rows } = await client.query('SELECT * FROM user WHERE username = req.body.username RETURNING username;');
-
-                if (rows[0].username === null) {
-                    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-                    const hash = await bcrypt.hash(req.body.password, salt);
-
-                    let params = [req.body.username, hash];
-                    let sql = "INSERT INTO user(username, password) VALUES ($1, $2);";   
-
-                    await client.query(sql, params);
-
-                    await client.query('COMMIT');
-                } 
-                res.redirect('back', { 
-                        flashMessage: "looks like an account with that username already exists - either choose diff username , or 'forget password' option" 
-                    });
-            }
-            catch (err) {
-                console.log('SIGN UPP ERROR: ', err);
-                client.query('ROLLBACK');
-                res.redirect('back');
-            }
-            finally {
-                client.release();
-                console.log('client Released');
-            }
-        })
-    },
-    userLogin(req, res, next) {
-        const pool = new Pool();
-
-        (async () => {
-            const client = await pool.connect(); 
-
-            try {
-                const { rows } = await client.query('SELECT * FROM user WHERE username = req.body.username RETURNING username, password;');
-                // check username 
-                // check hashed password 
-                if(rows[0].username != null) {
-                    res.redirect('home', { flashMessage: 'username and password exist!'});
-                    console.log(rows[0].username);
-                    return;
-                }
-            } 
-            catch (err) {
-                console.log('SIGN IN ERROR: ', err);
-                res.redirect('back', { flashMessage: 'sign in failed'});
-            }    
-        })
+            console.log('user registered!'); 
+            return res.status(201).send(result.rows[0]);
+        } catch(err) {
+            console.log(err);
+            return res.status(400).send(err);
+        }
     }
 }

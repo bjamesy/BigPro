@@ -3,10 +3,10 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const passport = require('passport');
+const passport = require('./db/passport');
 const session = require('express-session');
 
-// reuqire ROUTES 
+// require ROUTES 
 const indexRouter    = require('./routes/index');
 const postsRouter    = require('./routes/posts');
 const commentsRouter = require('./routes/comments');
@@ -25,10 +25,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // passport CONFIG
 app.use(session({
-  secret: process.env.EXPRESS_SECRET,
+  secret: "we the north",
   resave: false,
   saveUninitialized: true,
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // mount routes
 app.use('/', indexRouter);

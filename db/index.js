@@ -1,9 +1,20 @@
-const bcrypt = require('bcrypt');
-const { Client, Pool } = require('pg');
-const passport = require('passport');
-const passportLocal = require('passport-local');
-const db = {};
+const { Pool } = require('pg');
 
+const pool = new Pool();
 
-
-module.exports = db;
+// *** only when running single query should we use this *** - grabs first available
+// client from pool and acquires/releases automatically .. therefore should not be
+// used for transactions , since that would result in diff clients performing each q
+module.exports = {
+    query(sql, params) {
+        return new Promise((resolve, reject) => {
+            pool.query(sql, params)
+                .then(res => {
+                    resolve(res);
+                })
+                .catch(err => {
+                    reject(err);
+                })
+        })
+    }
+}

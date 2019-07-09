@@ -2,25 +2,15 @@ const express = require('express');
 const LocalStrategy = require('passport-local').Strategy;
 const router = express.Router();
 const { postRegister } = require('../controllers/index');
-const { Pool, Client} = require('pg');
 
 /* GET home page. */
 router.get('/', (req, res, next) => {
-  // const pool = new Pool();
-
-  // pool.connect()
-  //   .then(() => {
-  //     console.log('looks like u connected to POSTGRES');
-  //     res.render('index', { title: 'Beme' });
-  //   })
-  //   .catch(err => {
-  //     console.log('ERROR: ', err);
-  //   })
+    res.render('index', { title: 'Beme' });
 });
 
 /* GET /register */
 router.get('/register', (req, res, next) => {
-  res.send('POST /register');
+  res.send('GET /register');
 });
 
 /* POST /register */
