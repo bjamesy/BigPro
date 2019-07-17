@@ -1,0 +1,8 @@
+<h1>EDIT POST!</h1>
+
+<form action="/posts/<%= post.id %>?_method=PUT" method="POST">
+    <div><input type="text" name="title" placeholder="Title" value="<%= post.title %>""></div>
+    <div><textarea type="text" name="description" placeholder="Description"><%= post.description %></textarea></div>
+    
+    <input type="submit">
+</form>

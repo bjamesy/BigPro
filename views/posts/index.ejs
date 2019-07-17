@@ -1,0 +1,10 @@
+<h1>POSTS page</h1>
+
+<% posts.forEach(function(post) { %>
+    <div>
+        <h2><%= post.title %></h2>
+        <div><%= post.description %></div>
+        <div><%= post.created_date %></div>
+        <div><a href="/posts/<%= post.id %>">View More</a></div>
+    </div>
+<% }); %>
