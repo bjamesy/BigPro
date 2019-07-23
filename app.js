@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -5,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const passport = require('./db/passport');
 const session = require('express-session');
+const methodOverride = require('method-override');
 
 // require ROUTES 
 const indexRouter    = require('./routes/index');
@@ -22,6 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(methodOverride('_method'));
 
 // passport CONFIG
 app.use(session({
@@ -44,6 +48,9 @@ app.use((req, res, next) => {
 });
 
 // error handler
+// ** so this is added on last in the middleware stack .. so when we pass next(err) in
+// our routes we are passing the error down the stack to the error handling middleware vv
+// granted us by express-generator **
 app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message;

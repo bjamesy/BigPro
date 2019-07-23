@@ -1,4 +1,20 @@
-<h1><%= post.title %></h1>
-<div><%= post.description %></div>
-<div><%= post.created_date %></div>
-<div><a href="/posts/<%= post.id %>/edit">Edit Post</a></div>
+<h1><%= posts[0].title %></h1>
+<div><%= posts[0].description %></div>
+<div>
+    <% if(posts[0].url) { %>
+        <% posts.forEach(function(post) { %>
+            <img src="<%= post.url %>" alt="Post Image" width="200px"> 
+        <% }); %>        
+    <% } %>
+</div>    
+<div><%= posts[0].created_date %></div>
+<div>
+    <a href="/posts/<%= posts[0].id %>/edit">
+        <button>Edit</button>
+    </a>
+</div>
+<div>
+    <form action="/posts/<%= posts[0].id %>?_method=DELETE" method="POST">
+        <input type="submit" value="Delete">
+    </form>
+</div>
