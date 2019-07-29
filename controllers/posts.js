@@ -7,6 +7,7 @@ cloudinary.config({
     api_key: '634512344588652',
     api_secret: process.env.CLOUDINARY_SECRET
 });
+// require('locus');
 
 module.exports  = {
     // Posts Index
@@ -87,6 +88,7 @@ module.exports  = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+
             let findOneSQL = 'SELECT * FROM post WHERE id = $1';
             let params = [req.params.id];
             const { rows } = await client.query(findOneSQL, params);
@@ -99,6 +101,61 @@ module.exports  = {
                 new Date()
             ];
             const result = await client.query(updateOneSQL , params1);
+
+            let updates = 0;
+            // check for req.body.deletedImages.length 
+            if(req.body.deleteImages && req.body.deleteImages.length) {
+                // if - delete off CLOUDINARY using loop 
+                
+                for(const public_id of req.body.deleteImages) {
+                    await cloudinary.v2.uploader.destroy(public_id);
+                    // check for new photos  
+                    if(req.files.length) {
+                        // count loop iterations and splice file
+                        updates++;
+                        let file = req.files.splice(0,1);
+                        // load photo file from cloudinary 
+                        let newImage = await cloudinary.v2.uploader.upload(file[0].path);
+                        let newImages = {
+                            url: newImage.secure_url,
+                            public_id: newImage.public_id
+                        };
+                        
+                        // update the image that is being deleted 
+                        let imageQuery = 'UPDATE image SET url = $1, public_id = $2 WHERE public_id = $3';
+                        let params = [
+                            newImages.url, 
+                            newImages.public_id,
+                            public_id
+                        ];
+                        await client.query(imageQuery, params);      
+                    } else {
+                        let sql = 'DELETE FROM image WHERE public_id = $1';
+                        let params = [public_id];
+                        await client.query(sql, params);                    
+                    }
+                }    
+            }
+            // when the req.files.length > req.body.deleteImages.length
+            if(req.files.length || !req.files.length >= updates) {
+                for(const file of req.files) {
+                    // load photo file from cloudinary 
+                    let newImage = await cloudinary.v2.uploader.upload(file.path);
+                    let newImages = {
+                        url: newImage.secure_url,
+                        public_id: newImage.public_id
+                    };
+                    
+                    // update the image that is being deleted 
+                    let imageQuery = 'INSERT INTO image(url, public_id, post_id) VALUES($1, $2, $3)';
+                    let params = [
+                        newImages.url, 
+                        newImages.public_id,
+                        req.params.id
+                    ];    
+                    await client.query(imageQuery, params); 
+                }
+            }
             await client.query('COMMIT');    
 
             res.redirect(`/posts/${result.rows[0].id}`);
@@ -109,35 +166,28 @@ module.exports  = {
             client.release();
         }
     },
+    // Posts Destroy
     async postDestroy(req, res, next) {
-        let sql = "DELETE FROM post WHERE id = $1";
+        // do image deletion prior to deletion of post so as to not violate foreign key constraint  
+        // find out if there are images associated with post being deleted - hopefully not a query here 
+        let findImageQuery = 'SELECT * FROM image WHERE post_id = $1';
         let params = [req.params.id];
-        await db.query(sql, params);
+        const { rows } = await db.query(findImageQuery, params);
+
+        if(rows) {
+            // loop and destroy images from cloudinary
+            for(const image of rows) {
+                await cloudinary.v2.uploader.destroy(image.public_id);
+                // loop and DELETE from psql     
+                let imageDeleteQuery = 'DELETE FROM image WHERE public_id = $1';
+                let imgParam = [image.public_id];
+                await db.query(imageDeleteQuery, imgParam);    
+            } 
+        }
+
+        // post delete 
+        let postDeleteQuery = "DELETE FROM post WHERE id = $1";
+        await db.query(postDeleteQuery, params);
         return res.redirect('/posts')
-    },
-    // update(req, res, next) {
-    //     (async () => {
-    //         const findOneQuery = 'SELECT * FROM reflections WHERE id=$1';
-    //         const updateOneQuery =`UPDATE reflections
-    //             SET success=$1,low_point=$2,take_away=$3,modified_date=$4
-    //             WHERE id=$5 returning *`;
-    //         try {
-    //             const { rows } = await db.query(findOneQuery, [req.params.id]);
-    //             if(!rows[0]) {
-    //                 return res.status(404).send({'message': 'reflection not found'});
-    //             }
-    //             const values = [
-    //                 req.body.success || rows[0].success,
-    //                 req.body.low_point || rows[0].low_point,
-    //                 req.body.take_away || rows[0].take_away,
-    //                 moment(new Date()),
-    //                 req.params.id
-    //             ];
-    //             const response = await db.query(updateOneQuery, values);
-    //             return res.status(200).send(response.rows[0]);
-    //         } catch(err) {
-    //             return res.status(400).send(err);
-    //         }
-    //     })    
-    // },
+    }
 }
