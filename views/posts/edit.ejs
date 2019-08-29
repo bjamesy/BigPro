@@ -1,22 +1,24 @@
+<% layout('./layouts/boilerplate') -%>
+
 <h1>EDIT POST!</h1>
 
-<form action="/posts/<%= posts[0].id %>?_method=PUT" method="POST" id="postEditForm" enctype="multipart/form-data">
-    <div><input type="text" name="title" placeholder="Title" value="<%= posts[0].title %>"></div>
+<form action="/posts/<%= posts.id %>?_method=PUT" method="POST" id="postEditForm" enctype="multipart/form-data">
+    <div><input type="text" name="title" placeholder="Title" value="<%= posts.title %>"></div>
     <div>
         <input type="file" id="imageUpload" accept="images/*" name="images" multiple>
         <div>
-        <% if(posts[0].url) { %>
-            <% posts.forEach(function(post, i){ %> 
+        <% if(images.length && images[0].url) { %>
+            <% images.forEach(function(image, i){ %> 
             <div>
-                <img src="<%= post.url %>" width="75px">
+                <img src="<%= image.url %>" width="75px">
                 <label for="image<%= i %>">Delete?</label>
-                <input type="checkbox" name="deleteImages[]" class="imageDeleteCheckbox" id="image<%= i %>" value="<%= post.public_id %>">
+                <input type="checkbox" name="deleteImages[]" class="imageDeleteCheckbox" id="image<%= i %>" value="<%= image.public_id %>">
             </div>
             <% }) %> 
         <% } %>
         </div>
     </div>    
-    <div><textarea type="text" name="description" placeholder="Description"><%= posts[0].description %></textarea></div>
+    <div><textarea type="text" name="description" placeholder="Description"><%= posts.description %></textarea></div>
     
     <input type="submit">
 </form>

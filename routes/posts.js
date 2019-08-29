@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const multer = require('multer');
-const upload = multer({'dest': 'uploads/'})
-const { asyncErrorHandler } = require('../middleware');
+const { cloudinary, storage } = require('../cloudinary');
+const upload = multer({ storage });
+const { 
+    asyncErrorHandler,
+    isLoggedIn,
+    isAuthor
+} = require('../middleware');
 const { 
     postIndex, 
     postNew, 
@@ -14,24 +19,24 @@ const {
 } = require('../controllers/posts');
 
 /* GET posts index /posts */
-router.get('/', asyncErrorHandler(postIndex));
+router.get('/pages/:pages', asyncErrorHandler(postIndex))
 
 /* GET posts new /posts/new */
-router.get('/new', postNew);
+router.get('/new', isLoggedIn, postNew);
 
 /* POST posts create /posts */
-router.post('/', upload.array('images', 4), asyncErrorHandler(postCreate));
+router.post('/', isLoggedIn, upload.array('images', 4), postCreate);
   
 /* GET posts show /posts/:id */
 router.get('/:id', asyncErrorHandler(postShow));
 
-/* GET posts index /posts/:id/edit */
-router.get('/:id/edit', asyncErrorHandler(postEdit));
+/* GET posts edit /posts/:id/edit */
+router.get('/:id/edit', isLoggedIn, asyncErrorHandler(isAuthor), asyncErrorHandler(postEdit));
 
 /* PUT posts index /posts/:id */
-router.put('/:id', upload.array('images', 4), asyncErrorHandler(postUpdate));
+router.put('/:id', isLoggedIn, asyncErrorHandler(isAuthor), upload.array('images', 4), postUpdate);
   
 /* DELETE posts index /posts/:id */
-router.delete('/:id', asyncErrorHandler(postDestroy));
+router.delete('/:id', isLoggedIn, asyncErrorHandler(isAuthor), asyncErrorHandler(postDestroy));
   
 module.exports = router;

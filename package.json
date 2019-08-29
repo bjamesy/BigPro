@@ -10,20 +10,24 @@
     "bcrypt": "^3.0.6",
     "cloudinary": "^1.14.0",
     "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
-    "ejs": "~2.6.1",
-    "express": "~4.16.1",
+    "debug": "~4.1.1",
+    "ejs": "~2.6.2",
+    "ejs-mate": "^3.0.0",
+    "express": "~4.17.1",
     "express-session": "^1.16.2",
-    "http-errors": "~1.6.3",
+    "faker": "^4.1.0",
+    "http-errors": "~1.7.3",
     "method-override": "^3.0.0",
     "morgan": "~1.9.1",
     "multer": "^1.4.2",
+    "multer-storage-cloudinary": "^2.2.1",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
-    "pg": "^7.11.0"
+    "pg": "^7.12.1",
+    "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
-    "dotenv": "^8.0.0",
+    "dotenv": "^8.1.0",
     "locus": "^2.0.1"
   }
 }
