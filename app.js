@@ -42,15 +42,13 @@ app.use(session({
   saveUninitialized: true,
 }));
 
+// api key - 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
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 // set local variables middleware 
 app.use(function(req, res, next) {
-  // req.user = {
-  //   'id': '15',
-  //   'username': 'darealbjamesy'
-  // };
   res.locals.currentUser = req.user;
   // set default page title
   res.locals.title = 'Beme';

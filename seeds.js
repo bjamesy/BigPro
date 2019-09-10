@@ -8,7 +8,7 @@ async function seedPosts() {
         const post = {
             title: faker.lorem.word(),
             description: faker.lorem.text(),
-            author: '25'
+            author: '40'
         }
         let sql = 'INSERT INTO post(title, description, user_id, created_date, modified_date) VALUES($1, $2, $3, $4, $5)';
         let params = [

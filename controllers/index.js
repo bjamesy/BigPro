@@ -1,8 +1,13 @@
 const passport   = require('../db/passport');
-const db         = require('../db/index');
+const db         = require('../db/index')
+    , { Pool }   = require('pg')
+    , pool       = new Pool();
 const util       = require('util');
 const bcrypt     = require('bcrypt')
     , saltRounds = 10;
+const crypto     = require('crypto');
+const sgMail     = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 module.exports = {
     // GET /register
@@ -18,7 +23,7 @@ module.exports = {
                 req.body.username, 
                 req.body.email,
                 hash,
-                new Date()
+                Date.now()
             ];      
             const { rows } = await db.query(sql, params);
             const user = rows[0];
@@ -98,5 +103,133 @@ module.exports = {
         await login(user);
         req.session.success = 'Profile successfully updated'; 
         res.redirect('/profile');
+    },
+    getForgotPw(req, res, next) {
+        res.render('users/forgot');
+    },
+    async putForgotPw(req, res, next) {
+        const client = await pool.connect(); 
+        try {
+            await client.query('BEGIN');
+            const token = await crypto.randomBytes(20).toString('hex');
+
+            const { email } = req.body;
+            let sql = 'SELECT * FROM "user" WHERE email = $1';
+            let params = [email];
+            const { rows } = await client.query(sql, params);
+            
+            if (!rows[0]){
+                req.session.error = 'No account with that email exists.';
+                return res.redirect('/forgot-password');
+            }    
+
+            let updateSql = 'UPDATE "user" SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3 returning *';
+            let updateParams = [
+                token, 
+                Date.now() + 3600000,
+                rows[0].id
+            ];
+            const result = await client.query(updateSql, updateParams);
+
+            const msg = {
+                to: email,
+                from: 'Beme Admin <james_ballanger_2@hotmail.com>',
+                subject: 'Beme - Forgot Password / Reset',
+                text: `You are receiving this because you (or someone else) have requested 
+                the reset of the password for your account. Please click on the following 
+                link, or copy and paste it into your browser to complete the process:
+                http://${req.headers.host}/reset/${token}
+                If you did not request this, please ignore this email and your password will
+                remain unchanged.`.replace(/                /g, '')
+                // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+            };
+            await sgMail.send(msg);
+            await client.query('COMMIT');
+
+            req.session.success = `An email has been sent to ${email} with further instructions.`;
+            res.redirect('/forgot-password');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            next(err);
+        } finally {
+            await client.release();
+        }
+    }, 
+    async getReset(req, res, next) {
+        const { token } = req.params;
+        let sql = 'SELECT * FROM "user" WHERE reset_password_token = $1 AND reset_password_expires > $2';
+        let params = [
+            token,
+            Date.now()
+        ];
+        const { rows } = await db.query(sql, params);
+        const user = rows[0];
+
+        if (!user) {
+            req.session.error = 'Password reset token is invalid or has expired';
+            return res.redirect('/forgot-password');
+        };
+
+        res.render('users/reset', { token });
+    },
+    async putReset(req, res, next) {
+        const client = await pool.connect(); 
+        try {
+            await client.query('BEGIN');
+
+            const { token } = req.params;
+            let sql = 'SELECT * FROM "user" WHERE reset_password_token = $1 AND reset_password_expires > $2';
+            let params = [
+                token,
+                Date.now()
+            ];
+            const { rows } = await client.query(sql, params);
+            const user = rows[0];
+
+            if (!user) {
+                req.session.error = 'Password reset token is invalid or has expired';
+                return res.redirect('/forgot-password');
+            }; 
+    
+            if (req.body.password === req.body.confirm) {
+                const hash = await bcrypt.hash(req.body.password, saltRounds);
+                let updateSql = 'UPDATE "user" SET reset_password_token = $1, reset_password_expires = $2, password = $3 WHERE id = $4';
+                let updateParams = [
+                    null, 
+                    null, 
+                    hash,
+                    user.id
+                ];
+                await client.query(updateSql, updateParams);
+                const login = util.promisify(req.login.bind(req));
+                await login(user);
+            } else {
+                req.session.error = 'Passwords do not match';
+                return res.redirect(`/reset/${ token }`)
+            }
+    
+            const msg = {
+                to: user.email,
+                from: 'Beme Admin <james_ballanger_2@hotmail.com>',
+                subject: 'Beme - Forgot Password / Reset',
+                text: `You are receiving this because you (or someone else) have requested 
+                the reset of the password for your account. Please click on the following 
+                link, or copy and paste it into your browser to complete the process:
+                http://${req.headers.host}/reset/${token}
+                If you did not request this, please ignore this email and your password will
+                remain unchanged.`.replace(/                /g, '')
+                // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+            };
+            await sgMail.send(msg);
+            await client.query('COMMIT');
+    
+            req.session.success = 'Password successfully updated!';
+            res.redirect('/');    
+        } catch (err) {
+            await client.query('ROLLBACK');
+            next(err);
+        } finally {
+            await client.release();
+        }
     }
 }
