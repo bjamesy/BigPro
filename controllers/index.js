@@ -10,6 +10,10 @@ const sgMail     = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 module.exports = {
+    // GET /
+    async getLanding(req, res, next) {
+        res.render('index', { title: 'Beme' });
+    },     
     // GET /register
     getRegister(req, res, next) {
         res.render('register', { title: 'Register', username: '', email: '' });
@@ -46,7 +50,7 @@ module.exports = {
             }
             res.render('register', { title: 'Register', username, email, error });
         }
-    }, 
+    },
     // GET /login
     getLogin(req, res, next) {
         if(req.isAuthenticated()) return res.redirect('/');
@@ -83,7 +87,7 @@ module.exports = {
         });
     },
     // UPDATE PROFILE 
-    async updateProfile(req, res, next) {
+    async putProfile(req, res, next) {
         const { changedUsername, email } = req.body;
         const { user } = res.locals;
         
@@ -129,7 +133,7 @@ module.exports = {
                 Date.now() + 3600000,
                 rows[0].id
             ];
-            const result = await client.query(updateSql, updateParams);
+            await client.query(updateSql, updateParams);
 
             const msg = {
                 to: email,
@@ -211,14 +215,10 @@ module.exports = {
             const msg = {
                 to: user.email,
                 from: 'Beme Admin <james_ballanger_2@hotmail.com>',
-                subject: 'Beme - Forgot Password / Reset',
-                text: `You are receiving this because you (or someone else) have requested 
-                the reset of the password for your account. Please click on the following 
-                link, or copy and paste it into your browser to complete the process:
-                http://${req.headers.host}/reset/${token}
-                If you did not request this, please ignore this email and your password will
-                remain unchanged.`.replace(/                /g, '')
-                // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+                subject: 'Beme - Password Changed',
+                text: `Hello,
+                This email is to confirm that the password your account has just been changed.
+                If you did not make this change, please hit reply and notify us at once.`.replace(/                /g, '')
             };
             await sgMail.send(msg);
             await client.query('COMMIT');

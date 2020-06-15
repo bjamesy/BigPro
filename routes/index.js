@@ -7,11 +7,12 @@ const {
   postLogin, 
   getLogout,
   getProfile,
-  updateProfile,
+  putProfile,
   getForgotPw,
   putForgotPw,
   getReset, 
-  putReset
+  putReset,
+  getLanding
 } = require('../controllers');
 const { 
   asyncErrorHandler,  
@@ -21,9 +22,7 @@ const {
 } = require('../middleware');
  
 /* GET home page. */
-router.get('/', (req, res, next) => {
-  res.render('index', { title: 'Beme' });
-});
+router.get('/', asyncErrorHandler(getLanding));
 
 /* GET /register */
 router.get('/register', getRegister);
@@ -48,7 +47,7 @@ router.put('/profile',
   isLoggedIn, 
   asyncErrorHandler(isValidPassword), 
   asyncErrorHandler(changePassword), 
-  asyncErrorHandler(updateProfile)
+  asyncErrorHandler(putProfile)
 );
 
 /* GET /forgot */

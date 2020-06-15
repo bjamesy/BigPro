@@ -21,10 +21,8 @@ const commentsRouter = require('./routes/comments');
 
 const app = express();
 
-// use ejs-locals for all ejs templates:
 app.engine('ejs', engine);
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -34,6 +32,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
+
+// app.locals is a means to adding moment to every view
+app.locals.moment = require('moment');
 
 // passport CONFIG
 app.use(session({
@@ -83,7 +84,7 @@ app.use((err, req, res, next) => {
   // res.locals.message = err.message;
   // res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // // render the error page
+  // render the error page
   // res.status(err.status || 500);
   // res.render('error');
   console.log(err);

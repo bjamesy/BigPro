@@ -158,7 +158,7 @@ module.exports  = {
                 };
                 
                 // update the image that is being deleted 
-                let insertImage = 'INSERT INTO image(url, public_id, post_id) VALUES($1, $2, $3)';
+                let insertImage = 'INSERT INTO image (url, public_id, post_id) VALUES($1, $2, $3)';
                 let params = [
                     newImage.url, 
                     newImage.public_id,
@@ -175,23 +175,22 @@ module.exports  = {
         const client = await pool.connect(); 
         try {
             await client.query('BEGIN');
-
             const { posts } = res.locals; // from isAuthor middleware
             let queryParams = [posts.id];
-    
+
             // check for images associated with post
             let findImageQuery = 'SELECT * FROM image WHERE post_id = $1';
             const { rows } = await db.query(findImageQuery, queryParams);
-    
+            
             // delete comments associated with post
             let commentDelete = 'DELETE FROM comment WHERE post_id = $1';
             await db.query(commentDelete, queryParams);
     
-            // delete images associated with post
-            let imageDelete = 'DELETE FROM image WHERE post_id = $1';
-            await db.query(imageDelete, queryParams);    
             // check for not empty IMAGES result
             if(rows.length) {
+                // delete images associated with post
+                let imageDelete = 'DELETE FROM image WHERE post_id = $1';
+                await db.query(imageDelete, queryParams);    
                 // loop and destroy images from cloudinary
                 for(const image of rows) {
                     await cloudinary.v2.uploader.destroy(image.public_id);

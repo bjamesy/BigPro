@@ -4,7 +4,7 @@ module.exports  = {
     create(req, res, next) {
         (async () => {
             const text = `INSERT INTO
-                "user"(username, email, password, created_date);
+                "user"(username, email, password, created_date)
                 VALUES($1, $2, $3, $4)
                 returning *`;
             const values = [
